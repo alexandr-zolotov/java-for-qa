@@ -1,4 +1,4 @@
-package com.thomascook;
+package com.thomascook.jfq.lambdas;
 
 
 import org.junit.Test;
@@ -30,14 +30,14 @@ public class LambdasTest {
 
         List<String> input = Arrays.asList("QW5k", "elpaeg==", "dGhpcw==", "aXM=", "b2xvbG96eg==","aG93", "d2U=",
                 "a25vdw==", "RHpSTkdTZGZn","dGhl", "d29ybGQ=", "dG8=", "YmU=", "YmFuYW5hLXNoYXBl");
-
-        List<String> output = input.stream()
-                .map(/* put your decoding lambda here*/)
-                .filter(/* lambda with the filtering condition goes here*/)
-                ./*collect results*/
-
-        assertEquals("Wrong result list size", 11, output.size());
-        assertTrue("Words where decoded incorrectly", output.get(10).startsWith("banana"));
+//FIXME uncomment stuff below. It is commented out to not cause compilation errors
+//        List<String> output = input.stream()
+//                .map(null/* put your decoding lambda here*/)
+//                .filter(null/* lambda with the filtering condition goes here*/)
+//                ./*collect results*/
+//
+//        assertEquals("Wrong result list size", 11, output.size());
+//        assertTrue("Words where decoded incorrectly", output.get(10).startsWith("banana"));
     }
 
     /**
@@ -53,7 +53,7 @@ public class LambdasTest {
         Animal cow = new Animal("cow", "brown");
         Animal cat = new Animal("cat", "red");
 
-        PhraseBuilder phraseBuilder = /* write the implementation here as a lambda and remove null */;
+        PhraseBuilder phraseBuilder = null;/* write the implementation here as a lambda and remove null */;
 
         String phrase = getPhrase(cow, cat, phraseBuilder);
 
@@ -90,7 +90,7 @@ public class LambdasTest {
         animals.stream().collect(Collectors.groupingBy(Animal::getDescription));
 
         Map<String, List<String>> result = animals.stream()
-                .collect(
+                .collect(null
                                 /* use Stream API magic with 'groupingBy' and 'mapping' collector */
                 );
 

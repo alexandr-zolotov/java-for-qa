@@ -1,4 +1,4 @@
-package com.thomascook;
+package com.thomascook.jfq.lambdas;
 
 /**
  * @author Alexandr Zolotov

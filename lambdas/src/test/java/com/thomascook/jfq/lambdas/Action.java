@@ -1,4 +1,4 @@
-package com.thomascook;
+package com.thomascook.jfq.lambdas;
 
 import org.apache.commons.lang3.RandomUtils;
 import static org.apache.commons.lang3.StringUtils.*;
