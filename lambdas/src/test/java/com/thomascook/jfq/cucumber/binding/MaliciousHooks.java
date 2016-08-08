@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 public class MaliciousHooks {
 
-    private static final Logger LOG = LoggerFactory.getLogger("Kitchen");
+    private static final Logger LOG = LoggerFactory.getLogger(MaliciousHooks.class);
     /*
       This hook will be executed for all scenarios
      */

@@ -18,7 +18,7 @@ public class Amount {
     public Amount subtract(Amount amountToSubtract) {
         Validate.notNull(amountToSubtract);
         if(this.isAtLeast(amountToSubtract.left)){
-            return new Amount(left - amountToSubtract.left);
+            return new Amount(Math.max(0, left - amountToSubtract.left));
         } else {
             throw new IllegalArgumentException("Not enough to subtract from");
         }
