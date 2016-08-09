@@ -2,6 +2,7 @@ package com.thomascook.jfq.cucumber.binding;
 
 import com.thomascook.jfq.cucumber.domains.cooking.*;
 import cucumber.api.DataTable;
+import cucumber.api.Delimiter;
 import cucumber.api.Transform;
 import cucumber.api.Transpose;
 import cucumber.api.java.After;
@@ -138,12 +139,9 @@ public class Example {
 
         this.recipe.getInstructions().stream().forEachOrdered((it -> {
             String ingredientName = it.getIngredient();
-            assertTrue("QA ninja doesn't have required ingredient " + ingredientName, ingredients.containsKey(ingredientName));
-            assertTrue("Not enough " + ingredientName, ingredients.get(ingredientName).getAmount().isAtLeast(it.getAmount()));
 
-            Amount amountToUse = new Amount(it.getAmount());
-            ingredients.replace(ingredientName, new Ingredient(ingredientName,
-                    ingredients.get(ingredientName).getAmount().subtract(amountToUse)));
+            checkHaveEnoughOfIngredient(ingredientName, it.getAmount());
+            reduceIngredientAmount(ingredientName, it.getAmount());
 
             LOG.info("{}ing {} {}(s)", it.getAction(), it.getAmount(), it.getIngredient());
         }));
@@ -158,7 +156,7 @@ public class Example {
      * here we need string value to be transformed to an object of class Amount. To make the magic work put the class
      * of you transformer as a single @Transform annotation parameter
      */
-    @Then("^I still have (\\d+) units of (.+) left$")
+    @Then("^I end up with (\\d+) units of (.+)$")
     public void checkRemaining(@Transform(AmountTransformer.class) Amount expectedAmount, String name) {
         assertTrue("No " + name + " at all", ingredients.containsKey(name));
         assertTrue("Remaining amount of " + name + " is less than expected", ingredients.get(name).getAmount().equals(expectedAmount));
@@ -173,6 +171,24 @@ public class Example {
         assertFalse("Nothing to eat", cookedDishes.isEmpty());
     }
 
+
+    @When("^I use (.+) units of (.+) for cooking$")
+    public void useMultipleAmounts(@Delimiter("\\sand then\\s") List<Integer> amounts, String ingredientName){
+        int totalUsed = amounts.stream().mapToInt(x -> x).sum();
+        checkHaveEnoughOfIngredient(ingredientName, totalUsed);
+        reduceIngredientAmount(ingredientName, totalUsed);
+    }
+
+    private void reduceIngredientAmount(String ingredientName, int totalUsed) {
+        Amount amountToUse = new Amount(totalUsed);
+        ingredients.replace(ingredientName, new Ingredient(ingredientName,
+                ingredients.get(ingredientName).getAmount().subtract(amountToUse)));
+    }
+
+    private void checkHaveEnoughOfIngredient(String ingredientName, int amountRequired) {
+        assertTrue("QA ninja doesn't have required ingredient " + ingredientName, ingredients.containsKey(ingredientName));
+        assertTrue("Not enough " + ingredientName, ingredients.get(ingredientName).getAmount().isAtLeast(amountRequired));
+    }
 
     // Scenario Outline stuff
     @Given("there are (\\d+) (.+)\\(s\\) in the (.+)")
