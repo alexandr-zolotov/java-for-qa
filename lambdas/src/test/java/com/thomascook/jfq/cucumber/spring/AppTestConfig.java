@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class AppTestConfig {
 
-    //just some arbitrary map to make sure that dependency injection works
+    //just some arbitrary map to make sure that dependency injection work
     @Bean(name = "dictionary")
     public Map<String, String> getDictionary(){
         Map<String, String> dictionary = new HashMap<>();

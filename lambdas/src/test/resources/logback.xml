@@ -9,6 +9,8 @@
     </appender>
 
     <logger name="org.springframework" level="WARN" />
+    <logger name="org.springframework.web.client" level="DEBUG" />
+    <logger name="org.eclipse.jetty.server.HttpConnection" level="DEBUG" />
 
     <root>
         <level value="INFO"/>
