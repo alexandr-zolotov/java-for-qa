@@ -9,11 +9,10 @@
     </appender>
 
     <logger name="org.springframework" level="WARN" />
-    <logger name="org.springframework.web.client" level="DEBUG" />
-    <logger name="org.eclipse.jetty.server.HttpConnection" level="DEBUG" />
+    <logger name="com.thomascook.jfq.http.RestTemplateExamples" level="INFO" />
 
     <root>
-        <level value="INFO"/>
+        <level value="WARN"/>
         <appender-ref ref="consoleAppender"/>
     </root>
 </configuration>

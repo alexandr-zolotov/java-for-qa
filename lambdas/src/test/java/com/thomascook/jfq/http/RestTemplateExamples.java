@@ -1,14 +1,21 @@
 package com.thomascook.jfq.http;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.matching.EqualToJsonPattern;
-import com.github.tomakehurst.wiremock.matching.StringValuePattern;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.util.EntityUtils;
 import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -28,11 +35,14 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static com.github.tomakehurst.wiremock.matching.RequestPatternBuilder.allRequests;
+import static com.github.tomakehurst.wiremock.matching.RequestPatternBuilder.newRequestPattern;
 
 /**
  * @author Alexandr Zolotov
  */
 public class RestTemplateExamples {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RestTemplateExamples.class);
 
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort());
@@ -50,6 +60,8 @@ public class RestTemplateExamples {
      */
     private RestTemplate simplest = new RestTemplate();
 
+    private ObjectMapper objectMapper = new ObjectMapper()
+            .enable(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED);
     /**
      * If you need, you can customize some parts
      */
@@ -78,8 +90,6 @@ public class RestTemplateExamples {
         /**
          * For example if we have some customized ObjectMapper we can use it to alter
          */
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.enable(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED);
         HttpMessageConverter converter = new MappingJackson2HttpMessageConverter(objectMapper);
 
         restTemplate.setMessageConverters(Collections.singletonList(converter));
@@ -87,40 +97,70 @@ public class RestTemplateExamples {
     }
 
     @Test
-    public void dummy() { //todo rename
+    public void useRestTemplate() {
         int port = wireMockRule.port();
 
+        //set up a mock
         wireMockRule.stubFor(
                 post(urlPathMatching("/"))
                         .withRequestBody(new EqualToJsonPattern("{\"field1\":\"value1\"}", false, false)).willReturn(
-                        like(jsonResponse("{\"textField\":\"ololo\", \"number\":123}"))
+                        like(jsonResponse(new RequestBean("some text", 234)))
                 ));
 
-
+        //define target URL (URI to be more precise)
         URI uri = UriComponentsBuilder.newInstance().scheme("http").host("localhost").path("/").port(port).build().toUri();
 
         RestTemplate restTemplate = buildCustomizedRestTemplate();
 
+        /**
+         * The nice thing about RestTemplate is that it tries to handle HTTP stuff Content-Type both sending the
+         * request and receiving response. It is very convenient for some kinds of testing and for prototyping when you
+         * don't need to handle http specific or IO errors. You can use any of {@link RestTemplate#postForObject(String, Object, Class, Map)}
+         * methods then. If you need to analyze http response codes you can use a bunch of methods returning {@link ResponseEntity}.
+         * Keep in mind, that 4xx and 5xx HTTP response codes are considered client and server errors.
+         */
         Map<String, String[]> payload = new HashMap<>();
         payload.put("field1", new String[]{"value1"});
-        ResponseEntity<Bean> responseEntity = restTemplate.postForEntity(uri, payload, Bean.class);
 
-        wireMockRule.verify(allRequests());
+        ResponseBean justObject = restTemplate.postForObject(uri, payload, ResponseBean.class);
+        ResponseEntity<ResponseBean> responseEntity = restTemplate.postForEntity(uri, payload, ResponseBean.class);
 
-        System.out.println(responseEntity.getBody());
+        LOG.info("Just object: {}", justObject);
+        LOG.info("ResponseEntity: {}", responseEntity);
 
+        wireMockRule.verify(2, allRequests());
     }
 
-    static class Bean {
+    @Test
+    public void useApacheHttpClient() throws Exception {
 
-        @JsonProperty("textField")
-        String textField;
-        @JsonProperty("number")
-        int number;
+        URI uri = UriComponentsBuilder.newInstance().scheme("http").host("localhost").path("/").port(wireMockRule.port()).build().toUri();
 
-        @Override
-        public String toString() {
-            return "TextField: " + textField + "\nNumber: " + number;
+        //set up a mock
+        wireMockRule.stubFor(
+                post(urlPathMatching("/"))
+                        .withRequestBody(new EqualToJsonPattern("{\"field1\":\"value1\"}", false, false)).willReturn(
+                        like(jsonResponse(new RequestBean("some text", 234)))
+                ));
+
+        Map<String, String[]> payload = new HashMap<>();
+        payload.put("field1", new String[]{"value1"});
+
+        String requestString = objectMapper.writer().writeValueAsString(payload);
+        StringEntity entity = new StringEntity(requestString);
+        HttpPost httpPost = new HttpPost(uri);
+        httpPost.setEntity(entity);
+        httpPost.setHeader(new BasicHeader("Content-Type", "application/json"));
+
+        try (CloseableHttpClient client = HttpClients.createDefault()){
+
+            try (CloseableHttpResponse response = client.execute(httpPost)){
+                String responseString = EntityUtils.toString(response.getEntity());
+                LOG.info("HttpClient response code: {}", response.getStatusLine().getStatusCode());
+                LOG.info("HttpClient response body: {}", responseString);
+
+            }
         }
+
     }
 }
