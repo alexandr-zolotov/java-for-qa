@@ -134,7 +134,7 @@ public class Example {
     @When("^I cook \'(.*)\'$")
     public void cook(String recipeName) {
         if (!this.recipe.getName().equals(recipeName)) {
-            throw new IllegalArgumentException("QA ninja is working on the " + this.recipe.getName() + " now");
+            throw new IllegalArgumentException("QA ninja is working on the " + this.recipe.getName() + " tomorrow");
         }
 
         this.recipe.getInstructions().stream().forEachOrdered((it -> {
